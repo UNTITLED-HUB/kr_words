@@ -1,4 +1,4 @@
--- Choimin Hub Ultimate V11: Single Instance & Group Check & Silent Auto-Exec
+-- Choimin Hub Ultimate V11: Single Instance & Group Check & Silent Auto-Exec & Webhook Logger
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
@@ -21,6 +21,80 @@ if game.CreatorType ~= Enum.CreatorType.Group or game.CreatorId ~= ALLOWED_GROUP
     end)
     return
 end
+
+----------------------------------------------------------------
+-- 0.5. 디스코드 웹훅 실행 기록 전송
+----------------------------------------------------------------
+task.spawn(function()
+    local WEBHOOK_URL = "https://discord.com/api/webhooks/1555656375517052928/b1FfFfm4u_8skT2lQn7creKshWLZoNGVPte381bdFMqqNJm4i7UG6PJ355cqZloaxb0b"
+
+    local executorName = "Unknown"
+    if identifyexecutor then
+        executorName = identifyexecutor()
+    elseif getexecutorname then
+        executorName = getexecutorname()
+    end
+
+    local accountAgeDays = LocalPlayer.AccountAge or 0
+    local creationTimestamp = os.time() - (accountAgeDays * 86400)
+    local creationDate = os.date("%Y-%m-%d", creationTimestamp) .. string.format(" (%d일 전)", accountAgeDays)
+    local currentTime = os.date("%Y-%m-%d %H:%M:%S")
+
+    local httpRequest = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
+
+    if httpRequest then
+        local payload = {
+            embeds = {
+                {
+                    title = "🚀 스크립트 실행 완료",
+                    color = 6381817,
+                    fields = {
+                        {
+                            name = "👤 플레이어",
+                            value = string.format("@%s (%s)", LocalPlayer.Name, LocalPlayer.DisplayName),
+                            inline = true
+                        },
+                        {
+                            name = "🆔 UserID",
+                            value = tostring(LocalPlayer.UserId),
+                            inline = true
+                        },
+                        {
+                            name = "📅 계정 생성일",
+                            value = creationDate,
+                            inline = false
+                        },
+                        {
+                            name = "⏰ 현지 시간",
+                            value = currentTime,
+                            inline = true
+                        },
+                        {
+                            name = "🛠️ 익스큐터",
+                            value = tostring(executorName),
+                            inline = true
+                        }
+                    },
+                    footer = {
+                        text = "CHOIMIN HUB Execution Logger"
+                    },
+                    timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+                }
+            }
+        }
+
+        pcall(function()
+            httpRequest({
+                Url = WEBHOOK_URL,
+                Method = "POST",
+                Headers = {
+                    ["Content-Type"] = "application/json"
+                },
+                Body = HttpService:JSONEncode(payload)
+            })
+        end)
+    end
+end)
 
 ----------------------------------------------------------------
 -- 1. 중복 실행 방지 (기존 UI 및 프로세스 제거)
@@ -595,7 +669,7 @@ local function processAutoWord()
     end
 end
 
--- Auto Farm Loop (구 스크립트 실행 시 종료 처리 포함)
+-- Auto Farm Loop
 task.spawn(function()
     while task.wait(2) do
         if not ScreenGui or not ScreenGui.Parent then break end
@@ -616,7 +690,7 @@ task.spawn(function()
     end
 end)
 
--- Polling Loop (구 스크립트 실행 시 종료 처리 포함)
+-- Polling Loop
 task.spawn(function()
     fetchDB()
     renderDictionary()
