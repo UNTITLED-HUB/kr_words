@@ -1,4 +1,4 @@
--- Choimin Hub Ultimate V11: Single Instance & Group Check & Silent Auto-Exec & Webhook Logger
+print("Chain Hub Ultimate V11: Single Instance & Group Check & Silent Auto-Exec & Webhook Logger")
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
